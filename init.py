@@ -2,14 +2,24 @@
 # Импорт библиотек
 import pygame
 import sys
+import numpy as np
+from random import choice
 # Импорт созданных классов и функций
 from main.logic.button import Button
+from main.logic.load_images import load_image
 from main.logic.text import Text
 from time import sleep
 from main.logic.fade_in_out import fade_in_out
+from main.logic.wall import Wall
+from main.logic.board import Board
+from main.logic.player import Player
+from main.logic.grass import Grass
 
 
 screen = pygame.display.set_mode((1920, 1080))
+board = Board(32, 18)
+cell_size = 60
+board.set_view(0, 0, cell_size)
 
 
 def option() -> None:
@@ -28,26 +38,109 @@ def option() -> None:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     return
-        pygame.display.update()
+        pygame.display.flip()
+
+
+def get_wall_stage(layout, x, y):
+    neighbors = {
+        "top": layout[y - 1][x] if y > 0 else 0,  # Сверху
+        "bottom": layout[y + 1][x] if y < len(layout) - 1 else 0,  # Снизу
+        "left": layout[y][x - 1] if x > 0 else 0,  # Слева
+        "right": layout[y][x + 1] if x < len(layout[0]) - 1 else 0,  # Справа
+    }
+
+    # Отладка: вывод соседей
+    print(f"Cell ({x}, {y}) neighbors: {neighbors}")
+
+    # Определяем тип стены
+    if all(v == 0 for v in neighbors.values()):
+        return 0  # Wall0: одиночная стена
+
+    # Wall4: перекресток с четырьмя соединениями
+    if all(neighbors.values()):
+        return 4  # Все 4 стороны соединены
+
+    # Wall3: три соединения
+    if sum(neighbors.values()) == 3:
+        if not neighbors["top"]:
+            return 31  # Вниз-влево-вправо
+        if not neighbors["bottom"]:
+            return 33  # Вверх-влево-вправо
+        if not neighbors["left"]:
+            return 32  # Вверх-вправо-вниз
+        if not neighbors["right"]:
+            return 3  # Вверх-влево-вниз
+
+    # Wall2: углы
+    if neighbors["top"] and neighbors["left"] and not (neighbors["bottom"] or neighbors["right"]):
+        return 2  # Угол вверх-влево
+    if neighbors["top"] and neighbors["right"] and not (neighbors["bottom"] or neighbors["left"]):
+        return 23  # Угол вверх-вправо
+    if neighbors["bottom"] and neighbors["right"] and not (neighbors["top"] or neighbors["left"]):
+        return 22  # Угол вниз-вправо
+    if neighbors["bottom"] and neighbors["left"] and not (neighbors["top"] or neighbors["right"]):
+        return 21  # Угол вниз-влево
+
+    # Wall1: обычная стена
+    if neighbors["top"] and neighbors["bottom"] and not (neighbors["left"] or neighbors["right"]):
+        return 1  # Вертикальная стена
+    if neighbors["left"] and neighbors["right"] and not (neighbors["top"] or neighbors["bottom"]):
+        return 11  # Горизонтальная стена (поворачиваем на 90 градусов)
+
+    # Wall5: начало стены
+    if neighbors["top"] and not any(v for k, v in neighbors.items() if k != "top"):
+        return 5  # Смотрит вверх
+    if neighbors["left"] and not any(v for k, v in neighbors.items() if k != "left"):
+        return 51  # Смотрит влево
+    if neighbors["right"] and not any(v for k, v in neighbors.items() if k != "right"):
+        return 53  # Смотрит вправо
+    if neighbors["bottom"] and not any(v for k, v in neighbors.items() if k != "bottom"):
+        return 52  # Смотрит вниз
+
+    # На случай ошибки: по умолчанию вертикальная стена
+    return 1
+
+
+def create_walls(layout):
+    walls = pygame.sprite.Group()
+    grass = pygame.sprite.Group()
+    for y, row in enumerate(layout):
+        for x, cell in enumerate(row):
+            if cell == 1:  # Если клетка - стена
+                wall_stage = get_wall_stage(layout, x, y)
+                Wall((x, y), cell_size, wall_stage, walls)
+            Grass((x, y), cell_size, grass)
+    return walls, grass
 
 
 def play() -> None:
     screen.fill((0, 0, 0))
-    Text(font_size=100, color=(255, 255, 255)).render(screen, 'Пока идет разработка(((', (960, 100), True)
-    btn_return = Button(screen, (720, 300), (480, 50), text='Назад', text_color=(255, 255, 255))
-    btn_return.render()
+    clock1 = pygame.time.Clock()
+    walls = create_walls(board.board)[0]
+    grass = create_walls(board.board)[1]
+    coords = []
+    for i, row in enumerate(board.board):
+        for j, value in enumerate(row):
+            if value == np.uint8(0):
+                coords.append((i, j))
+    i, j = choice(coords)
+    player = Player(((cell_size + 1 )* i, (cell_size + 1) * j), cell_size)
+    menu_btn = Button(screen, (10, 10), (30, 30), surface=screen)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1 and btn_return.get_click(event.pos):
-                    return
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    return
-        pygame.display.update()
+                menu_btn.connect(menu, event.pos)
+        keys = pygame.key.get_pressed()
+        player.move(keys, walls)
+        screen.fill((0, 0, 0))  # Заливка фона
+        grass.draw(screen)
+        walls.draw(screen)  # Рисуем стены
+        screen.blit(player.image, player.rect.topleft)
+        pygame.display.flip()
+        clock1.tick(120)
 
 
 def quit_screen(screen_start) -> None:
@@ -73,7 +166,7 @@ def quit_screen(screen_start) -> None:
                     return
 
 
-def Main():
+def menu():
     pygame.init()
     pygame.display.set_caption('Разрушитель лабиринтов')
     clock = pygame.time.Clock()
@@ -95,8 +188,9 @@ def Main():
         button_start.render()
         button_help.render()
         button_exit.render()
+        clock.tick(120)
     pygame.quit()
 
 
 if __name__ == '__main__':
-    Main()
+    menu()
