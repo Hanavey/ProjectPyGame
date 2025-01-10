@@ -1,14 +1,15 @@
 class Camera:
+    """Класс камеры"""
     def __init__(self, world_width, world_height, screen_width, screen_height):
-        self.world_width = world_width
-        self.world_height = world_height
-        self.screen_width = screen_width
-        self.screen_height = screen_height
-        self.offset_x = 0
-        self.offset_y = 0
+        self.world_width = world_width  # Ширина игрового мира
+        self.world_height = world_height    # Длина игрового мира
+        self.screen_width = screen_width    # Ширина экрана
+        self.screen_height = screen_height  # Длина экрана
+        self.offset_x = 0   # Центр по оси X
+        self.offset_y = 0   # Центр по оси Y
 
     def apply(self, target):
-        return target.rect.move(self.offset_x, self.offset_y)
+        return target.rect.move(self.offset_x, self.offset_y)   # Смещенный rect объект
 
     def update(self, target):
         # Центрируем камеру на игроке

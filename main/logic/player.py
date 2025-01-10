@@ -1,24 +1,31 @@
+# Импорт библиотек
 import pygame
+# Импорт созданных классов и функций
 from main.logic.load_images import load_image
 
 
 class Player(pygame.sprite.Sprite):
+    """Класс игрока"""
     def __init__(self, pos: tuple[int, int], cell_size, *groups):
         super().__init__(*groups)
+        # Создание изображения
         self.image = load_image('player1.png')
         self.image = pygame.transform.scale(self.image, (cell_size // 1.5, cell_size))
+        # Создание rect объекта
         self.rect = self.image.get_rect()
         self.rect.center = (pos[0], pos[1])
-        self.speed = 5
+        self.speed = 4  # Переменная для скорости игрока
+        # Создание маски объекта
         self.mask = pygame.mask.from_surface(self.image)
+        # Переменные для разворота игрока
         self.left, self.right = False, True
 
-    def check_collision(self, walls, exit_maze) -> int:
+    def check_collision(self, walls: pygame.sprite.Group, exit_maze: pygame.sprite.Group) -> int:
         for wall in walls:
-            if pygame.sprite.collide_mask(self, wall):  # Проверка столкновения по маске
+            if pygame.sprite.collide_mask(self, wall):  # Проверка столкновения по маске со стенами
                 return 1
         for exit_maze in exit_maze:
-            if pygame.sprite.collide_mask(self, exit_maze):
+            if pygame.sprite.collide_mask(self, exit_maze): # Проверка столкновения по маске с выходом
                 return 2
         return 0
 
@@ -42,12 +49,12 @@ class Player(pygame.sprite.Sprite):
                 self.right = False
 
         self.rect.x += dx
-        if self.check_collision(walls, exit_maze) == 1:
+        if self.check_collision(walls, exit_maze) == 1: # Если сталкивается со стенами дальше не идет по оси X
             self.rect.x -= dx
 
         self.rect.y += dy
-        if self.check_collision(walls, exit_maze) == 1:
+        if self.check_collision(walls, exit_maze) == 1: # Если сталкивается со стенами дальше не идет по оси X
             self.rect.y -= dy
 
-        if self.check_collision(walls, exit_maze) == 2:
+        if self.check_collision(walls, exit_maze) == 2: # Если сталкивается с выходом, возвращается True
             return True

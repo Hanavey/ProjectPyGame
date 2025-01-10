@@ -1,10 +1,14 @@
+# Импорт библиотек
 import pygame
+# Импорт созданных классов и функций
 from main.logic.load_images import load_image
 
 
 class Wall(pygame.sprite.Sprite):
+    """Класс стен"""
     def __init__(self, pos: tuple[int, int], cell_size: int, wall_stage: int, *groups):
         super().__init__(*groups)
+        # Словарь с изображениями
         stages = {
             0: load_image(f'wall0.png'),
             1: load_image(f'wall1.png'),
@@ -23,8 +27,11 @@ class Wall(pygame.sprite.Sprite):
             52: pygame.transform.rotate(load_image(f'wall5.png'), 180),
             53: pygame.transform.rotate(load_image(f'wall5.png'), 270),
         }
+        # Создание изображения
         self.image = stages[wall_stage]
         self.image = pygame.transform.scale(self.image, (cell_size, cell_size))
+        # Создание rect объекта
         self.rect = self.image.get_rect()
         self.rect.topleft = (pos[0] * cell_size, pos[1] * cell_size)
+        # Создание маски объекта
         self.mask = pygame.mask.from_surface(self.image)

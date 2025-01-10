@@ -1,10 +1,15 @@
-from main.logic.text import Text
-from typing import Callable, Tuple
+# Импорт библиотек
 import pygame
+from typing import Callable
+# Импорт созданных классов и функций
+from main.logic.text import Text
 
 
 class Button:
-    def __init__(self, screen: pygame.Surface, dot: tuple[int, int], size: tuple[int, int], text: str=None, text_color: tuple[int, int, int]=(255, 255, 255), image: pygame.image=None, surface: pygame.Surface=None):
+    """Класс кнопок"""
+    def __init__(self, screen: pygame.Surface, dot: tuple[int, int], size: tuple[int, int], text: str=None,
+                 text_color: tuple[int, int, int]=(255, 255, 255), image: pygame.image=None,
+                 surface: pygame.Surface=None):
         self.screen = screen
         self.image = image
         self.x = dot[0]
@@ -15,6 +20,7 @@ class Button:
         self.text_color = text_color
         self.surface = surface
 
+    # Метод для получения размера текста
     def text_(self, text_color: tuple[int, int, int], font_path: str=None) -> tuple[int, int, int, str]:
         start_size = 100
 
@@ -31,7 +37,7 @@ class Button:
 
         return text_x, text_y, start_size - 20, font_path
 
-    def render(self):
+    def render(self):   # Метод для вывода кнопки на экран
         if self.image is None:
             pygame.draw.rect(self.screen, (pygame.Color('green')), (self.x, self.y, self.w, self.h), 4)
             if self.text is not None:
@@ -43,12 +49,13 @@ class Button:
             self.screen.blit(self.surface, (0, 0))
             pygame.display.flip()
 
-    def get_click(self, event_pos: tuple[int, int]) -> bool:
+    def get_click(self, event_pos: tuple[int, int]) -> bool:    # Получение нажатия на кнопку
         pos_x, pos_y = event_pos
         if self.x <= pos_x <= self.x + self.w and self.y <= pos_y <= self.y + self.h:
             return True
         return False
 
+    # Добавление функции, которая будет вызвана после нажатия на кнопку
     def connect(self, function: Callable, event_pos: tuple[int, int], args: tuple=()) -> None:
         if self.get_click(event_pos):
             function(*args)

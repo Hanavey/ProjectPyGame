@@ -1,7 +1,10 @@
+# Импорт библиотек
 import pygame
 
 
-def fade_in_out(screen: pygame.Surface, surface: pygame.Surface, fade_in: bool = True, speed: int = 5, max_alpha: int = 255, min_alpha: int = 0) -> pygame.Surface:
+def fade_in_out(screen: pygame.Surface, surface: pygame.Surface, fade_in: bool = True, speed: int = 5,
+                max_alpha: int = 255, min_alpha: int = 0) -> pygame.Surface:
+    """Функция для затемнения экрана"""
     alpha = max_alpha if fade_in else min_alpha
     step = -speed if fade_in else speed
     fade_screen = pygame.Surface(screen.get_size())

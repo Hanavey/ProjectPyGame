@@ -1,10 +1,10 @@
-"""Загрузка изображения"""
 # Импорт библиотек
 import pygame
 import os
 
 
 def load_image(name, color_key=None):   # Функция для загрузки изображения
+    """Загрузка изображения"""
     fullname = os.path.join('main', 'images', name)
     try:
         image = pygame.image.load(fullname)
