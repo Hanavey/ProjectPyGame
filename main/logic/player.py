@@ -9,17 +9,20 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (cell_size // 1.5, cell_size))
         self.rect = self.image.get_rect()
         self.rect.center = (pos[0], pos[1])
-        self.speed = 1
+        self.speed = 5
         self.mask = pygame.mask.from_surface(self.image)
         self.left, self.right = False, True
 
-    def check_collision(self, walls):
+    def check_collision(self, walls, exit_maze) -> int:
         for wall in walls:
             if pygame.sprite.collide_mask(self, wall):  # Проверка столкновения по маске
-                return True
-        return False
+                return 1
+        for exit_maze in exit_maze:
+            if pygame.sprite.collide_mask(self, exit_maze):
+                return 2
+        return 0
 
-    def move(self, keys, walls):
+    def move(self, keys, walls, exit_maze):
         dx, dy = 0, 0
         if keys[pygame.K_UP]:  # Движение вверх
             dy = -self.speed
@@ -39,9 +42,12 @@ class Player(pygame.sprite.Sprite):
                 self.right = False
 
         self.rect.x += dx
-        if self.check_collision(walls):
+        if self.check_collision(walls, exit_maze) == 1:
             self.rect.x -= dx
 
         self.rect.y += dy
-        if self.check_collision(walls):
+        if self.check_collision(walls, exit_maze) == 1:
             self.rect.y -= dy
+
+        if self.check_collision(walls, exit_maze) == 2:
+            return True
