@@ -2,11 +2,8 @@
 # Импорт библиотек
 import pygame
 import sys
-import numpy as np
-from random import choice
 # Импорт созданных классов и функций
 from main.logic.button import Button
-from main.logic.load_images import load_image
 from main.logic.text import Text
 from time import sleep
 from main.logic.fade_in_out import fade_in_out
