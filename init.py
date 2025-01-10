@@ -14,12 +14,13 @@ from main.logic.wall import Wall
 from main.logic.board import Board
 from main.logic.player import Player
 from main.logic.grass import Grass
+from main.logic.exit_maze import ExitMaze
+from main.logic.camera import Camera
 
 
 screen = pygame.display.set_mode((1920, 1080))
-board = Board(32, 18)
 cell_size = 60
-board.set_view(0, 0, cell_size)
+all_sprites_group = pygame.sprite.Group()
 
 
 def option() -> None:
@@ -48,9 +49,6 @@ def get_wall_stage(layout, x, y):
         "left": layout[y][x - 1] if x > 0 else 0,  # Слева
         "right": layout[y][x + 1] if x < len(layout[0]) - 1 else 0,  # Справа
     }
-
-    # Отладка: вывод соседей
-    print(f"Cell ({x}, {y}) neighbors: {neighbors}")
 
     # Определяем тип стены
     if all(v == 0 for v in neighbors.values()):
@@ -101,31 +99,55 @@ def get_wall_stage(layout, x, y):
     return 1
 
 
+def get_exit_stage(layout, x, y):
+    neighbors = {
+        "top": layout[y - 1][x] if y > 0 else 0,  # Сверху
+        "bottom": layout[y + 1][x] if y < len(layout) - 1 else 0,  # Снизу
+        "left": layout[y][x - 1] if x > 0 else 0,  # Слева
+        "right": layout[y][x + 1] if x < len(layout[0]) - 1 else 0,  # Справа
+    }
+
+    if neighbors["left"] and neighbors["right"]:
+        return 1
+    if neighbors["top"] and neighbors["bottom"]:
+        return 2
+
+
 def create_walls(layout):
     walls = pygame.sprite.Group()
     grass = pygame.sprite.Group()
+    exit_maze = pygame.sprite.Group()
     for y, row in enumerate(layout):
         for x, cell in enumerate(row):
+            Grass((x, y), cell_size, grass, all_sprites_group)
             if cell == 1:  # Если клетка - стена
                 wall_stage = get_wall_stage(layout, x, y)
-                Wall((x, y), cell_size, wall_stage, walls)
-            Grass((x, y), cell_size, grass)
-    return walls, grass
+                Wall((x, y), cell_size, wall_stage, walls, all_sprites_group)
+            if cell == 3:
+                exit_stage = get_exit_stage(layout, x, y)
+                ExitMaze((x, y), cell_size, exit_stage, exit_maze, all_sprites_group)
+    return walls, grass, exit_maze
 
 
 def play() -> None:
+    board = Board(60, 60)  # 60x60 клеток
+    board.set_view(0, 0, cell_size)
     screen.fill((0, 0, 0))
     clock1 = pygame.time.Clock()
-    walls = create_walls(board.board)[0]
-    grass = create_walls(board.board)[1]
-    coords = []
-    for i, row in enumerate(board.board):
-        for j, value in enumerate(row):
-            if value == np.uint8(0):
-                coords.append((i, j))
-    i, j = choice(coords)
-    player = Player(((cell_size + 1 )* i, (cell_size + 1) * j), cell_size)
+    walls_data = create_walls(board.board)
+    walls = walls_data[0]
+    exit_maze = walls_data[2]
+    camera = Camera(board.width * cell_size, board.height * cell_size, 1920, 1080)
+
+    # Центр мира в пикселях
+    world_center_x = (board.width * cell_size) // 2
+    world_center_y = (board.height * cell_size) // 2
+
+    # Создаём игрока в центре мира
+    player = Player((world_center_x, world_center_y), cell_size, all_sprites_group)
+
     menu_btn = Button(screen, (10, 10), (30, 30), surface=screen)
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -133,14 +155,23 @@ def play() -> None:
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 menu_btn.connect(menu, event.pos)
+
         keys = pygame.key.get_pressed()
-        player.move(keys, walls)
+        check = player.move(keys, walls, exit_maze)
+        if check:
+            break
+
+        # Обновление экрана
+        camera.update(player)
+
         screen.fill((0, 0, 0))  # Заливка фона
-        grass.draw(screen)
-        walls.draw(screen)  # Рисуем стены
-        screen.blit(player.image, player.rect.topleft)
+
+        for sprite in all_sprites_group:
+            screen.blit(sprite.image, camera.apply(sprite))
+
+
         pygame.display.flip()
-        clock1.tick(120)
+        clock1.tick(75)
 
 
 def quit_screen(screen_start) -> None:
