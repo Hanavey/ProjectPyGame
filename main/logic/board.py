@@ -40,6 +40,7 @@ class Board:    # клетчатое поле
         return cell
 
     def generate_maze(self):
+        # Убедимся, что размеры нечётные
         if self.width % 2 == 0:
             self.width -= 1
         if self.height % 2 == 0:
@@ -48,21 +49,30 @@ class Board:    # клетчатое поле
         # Инициализация: всё поле — стены
         maze = np.ones((self.height, self.width), dtype=int)
 
+        # Размер центральной комнаты
+        room_size = 3  # Нечётное число для корректной интеграции
+        room_x1 = (self.width - room_size) // 2
+        room_y1 = (self.height - room_size) // 2
+        room_x2 = room_x1 + room_size
+        room_y2 = room_y1 + room_size
+
+        # Очищаем область центральной комнаты
+        maze[room_y1:room_y2, room_x1:room_x2] = 0
+
         # Рекурсивная генерация лабиринта
         def carve(x, y):
-            """
-            Рекурсивно создаёт лабиринт начиная с точки (x, y).
-            """
             directions = [(0, -2), (2, 0), (0, 2), (-2, 0)]  # Сдвиги: вверх, вправо, вниз, влево
             random.shuffle(directions)  # Случайный порядок направлений
 
             for dx, dy in directions:
                 nx, ny = x + dx, y + dy  # Новая клетка
-                if nx > 0 and nx < self.width - 1 and ny > 0 and ny < self.height - 1:  # Проверка на границы
+                if 0 < nx < self.width - 1 and 0 < ny < self.height - 1:  # Проверка на границы
                     if maze[ny, nx] == 1:  # Если клетка — стена
-                        maze[ny, nx] = 0  # Создаём проход
-                        maze[ny - dy // 2, nx - dx // 2] = 0  # Убираем стену между клетками
-                        carve(nx, ny)  # Рекурсивно идём дальше
+                        # Проверяем, не пересекаем ли центральную комнату
+                        if not (room_x1 <= nx < room_x2 and room_y1 <= ny < room_y2):
+                            maze[ny, nx] = 0  # Создаём проход
+                            maze[ny - dy // 2, nx - dx // 2] = 0  # Убираем стену между клетками
+                            carve(nx, ny)  # Рекурсивно идём дальше
 
         # Начальная точка (гарантированно нечётная)
         start_x, start_y = 1, 1
@@ -71,10 +81,37 @@ class Board:    # клетчатое поле
         # Запускаем генерацию
         carve(start_x, start_y)
 
+        # Создаём путь из центральной комнаты в лабиринт
+        room_exit_x = random.choice(range(room_x1, room_x2, 2))
+        room_exit_y = random.choice(range(room_y1, room_y2, 2))
+        maze[room_exit_y, room_exit_x] = 0
+
+        # Соединяем комнату с лабиринтом
+        if room_exit_x == room_x1:
+            maze[room_exit_y, room_exit_x - 1] = 0
+        elif room_exit_x == room_x2 - 1:
+            maze[room_exit_y, room_exit_x + 1] = 0
+        elif room_exit_y == room_y1:
+            maze[room_exit_y - 1, room_exit_x] = 0
+        elif room_exit_y == room_y2 - 1:
+            maze[room_exit_y + 1, room_exit_x] = 0
+
+        # Добавляем выход из лабиринта
         exit_x, exit_y = random.choice(
             [(0, random.randint(1, self.height - 2)), (self.width - 1, random.randint(1, self.height - 2)),
              (random.randint(1, self.width - 2), 0), (random.randint(1, self.width - 2), self.height - 1)])
+        maze[exit_y, exit_x] = 3
 
-        maze[exit_y, exit_x] = 0
+        # Гарантируем соединение выхода с лабиринтом
+        if maze[exit_y, exit_x] == 3 and maze[exit_y - 1:exit_y + 2, exit_x - 1:exit_x + 2].all():
+            # Если вокруг только стены, прорубаем путь
+            if exit_x == 0:
+                maze[exit_y, exit_x + 1] = 0
+            elif exit_x == self.width - 1:
+                maze[exit_y, exit_x - 1] = 0
+            elif exit_y == 0:
+                maze[exit_y + 1, exit_x] = 0
+            elif exit_y == self.height - 1:
+                maze[exit_y - 1, exit_x] = 0
 
         return maze
