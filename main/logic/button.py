@@ -3,6 +3,7 @@ import pygame
 from typing import Callable
 # Импорт созданных классов и функций
 from main.logic.text import Text
+from main.logic.load_images import load_image
 
 
 class Button:
@@ -44,7 +45,7 @@ class Button:
                 text_ = self.text_(self.text_color)
                 Text(font_name=text_[3], font_size=text_[2], color=self.text_color).render(self.screen, self.text, (text_[0], text_[1]))
         else:
-            texture = pygame.image.load(self.image)
+            texture = pygame.transform.scale(load_image(self.image), (self.w, self.h))
             self.surface.blit(texture, (self.x, self.y))
             self.screen.blit(self.surface, (0, 0))
             pygame.display.flip()
