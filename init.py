@@ -1,9 +1,14 @@
 """Основной файл, запускающий игру."""
 # Импорт библиотек
+from random import choice
 import pygame
 import sys
+
+from pygame.examples.cursors import image
+
 # Импорт созданных классов и функций
 from main.logic.button import Button
+from main.logic.load_images import load_image
 from main.logic.text import Text
 from time import sleep
 from main.logic.fade_in_out import fade_in_out
@@ -13,6 +18,7 @@ from main.logic.player import Player
 from main.logic.grass import Grass
 from main.logic.exit_maze import ExitMaze
 from main.logic.camera import Camera
+from main.logic.enemy import Enemy
 
 
 screen = pygame.display.set_mode((1920, 1080))
@@ -129,12 +135,23 @@ def create_walls(layout):
 def play() -> None:
     board = Board(60, 60)  # 60x60 клеток
     board.set_view(0, 0, cell_size)
+    empty_cells = []
+    for y, row in enumerate(board.board):
+        for x, cell in enumerate(row):
+            if cell == 0:
+                empty_cells.append((x, y))
     screen.fill((0, 0, 0))
     clock1 = pygame.time.Clock()
     walls_data = create_walls(board.board)
     walls = walls_data[0]
     exit_maze = walls_data[2]
+    enemy = pygame.sprite.Group()
     camera = Camera(board.width * cell_size, board.height * cell_size, 1920, 1080)
+
+    for _ in range(10):
+        x, y = choice(empty_cells)
+        Enemy(x, y, board.board, 60, 7, all_sprites_group, enemy)
+        empty_cells.remove((x, y))
 
     # Центр мира в пикселях
     world_center_x = (board.width * cell_size) // 2
@@ -143,6 +160,7 @@ def play() -> None:
     # Создаём игрока в центре мира
     player = Player((world_center_x, world_center_y), cell_size, all_sprites_group)
 
+    menu_screen = pygame.transform.scale(load_image('menu.png'), (50, 50))
     menu_btn = Button(screen, (10, 10), (30, 30), surface=screen)
 
     while True:
@@ -160,12 +178,13 @@ def play() -> None:
 
         # Обновление экрана
         camera.update(player)
+        enemy.update(player.rect.center)
 
         screen.fill((0, 0, 0))  # Заливка фона
 
         for sprite in all_sprites_group:
             screen.blit(sprite.image, camera.apply(sprite))
-
+        menu_btn.render()
 
         pygame.display.flip()
         clock1.tick(75)
