@@ -20,16 +20,19 @@ class Player(pygame.sprite.Sprite):
         # Переменные для разворота игрока
         self.left, self.right = False, True
 
-    def check_collision(self, walls: pygame.sprite.Group, exit_maze: pygame.sprite.Group) -> int:
+    def check_collision(self, walls: pygame.sprite.Group, exit_maze: pygame.sprite.Group, enemies: pygame.sprite.Group) -> int:
         for wall in walls:
             if pygame.sprite.collide_mask(self, wall):  # Проверка столкновения по маске со стенами
                 return 1
         for exit_maze in exit_maze:
             if pygame.sprite.collide_mask(self, exit_maze): # Проверка столкновения по маске с выходом
                 return 2
+        for enemy in enemies:
+            if pygame.sprite.collide_mask(self, enemy):
+                return 3
         return 0
 
-    def move(self, keys, walls, exit_maze):
+    def move(self, keys, walls, exit_maze, enemies) -> int:
         dx, dy = 0, 0
         if keys[pygame.K_UP]:  # Движение вверх
             dy = -self.speed
@@ -49,12 +52,15 @@ class Player(pygame.sprite.Sprite):
                 self.right = False
 
         self.rect.x += dx
-        if self.check_collision(walls, exit_maze) == 1: # Если сталкивается со стенами дальше не идет по оси X
+        if self.check_collision(walls, exit_maze, enemies) == 1: # Если сталкивается со стенами дальше не идет по оси X
             self.rect.x -= dx
 
         self.rect.y += dy
-        if self.check_collision(walls, exit_maze) == 1: # Если сталкивается со стенами дальше не идет по оси X
+        if self.check_collision(walls, exit_maze, enemies) == 1: # Если сталкивается со стенами дальше не идет по оси X
             self.rect.y -= dy
 
-        if self.check_collision(walls, exit_maze) == 2: # Если сталкивается с выходом, возвращается True
-            return True
+        if self.check_collision(walls, exit_maze, enemies) == 2: # Если сталкивается с выходом, возвращается True
+            return 1
+
+        if self.check_collision(walls, exit_maze, enemies) == 3:
+            return 2
