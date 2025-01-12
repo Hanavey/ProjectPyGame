@@ -1,4 +1,3 @@
-"""Класс для клетчатого поля."""
 # Импорт библиотек
 import pygame
 import numpy as np
@@ -6,6 +5,7 @@ import random
 
 
 class Board:    # клетчатое поле
+    """Класс для клетчатого поля."""
     def __init__(self, width: int, height: int) -> None:
         self.width = width
         self.height = height
@@ -39,7 +39,7 @@ class Board:    # клетчатое поле
         self.board[cell[1]][cell[0]] = 1 if self.board[cell[1]][cell[0]] == 0 else 0
         return cell
 
-    def generate_maze(self):
+    def generate_maze(self) -> list:
         # Убедимся, что размеры нечётные
         if self.width % 2 == 0:
             self.width -= 1
@@ -60,7 +60,7 @@ class Board:    # клетчатое поле
         maze[room_y1:room_y2, room_x1:room_x2] = 0
 
         # Рекурсивная генерация лабиринта
-        def carve(x, y):
+        def carve(x: int, y: int):
             directions = [(0, -2), (2, 0), (0, 2), (-2, 0)]  # Сдвиги: вверх, вправо, вниз, влево
             random.shuffle(directions)  # Случайный порядок направлений
 

@@ -6,7 +6,7 @@ from main.logic.load_images import load_image
 
 class Player(pygame.sprite.Sprite):
     """Класс игрока"""
-    def __init__(self, pos: tuple[int, int], cell_size, *groups):
+    def __init__(self, pos: tuple[int, int], cell_size: int, *groups: pygame.sprite.Group):
         super().__init__(*groups)
         # Создание изображения
         self.image = load_image('player1.png')
@@ -20,7 +20,8 @@ class Player(pygame.sprite.Sprite):
         # Переменные для разворота игрока
         self.left, self.right = False, True
 
-    def check_collision(self, walls: pygame.sprite.Group, exit_maze: pygame.sprite.Group, enemies: pygame.sprite.Group) -> int:
+    def check_collision(self, walls: pygame.sprite.Group, exit_maze: pygame.sprite.Group,
+                        enemies: pygame.sprite.Group) -> int:
         for wall in walls:
             if pygame.sprite.collide_mask(self, wall):  # Проверка столкновения по маске со стенами
                 return 1
@@ -32,7 +33,8 @@ class Player(pygame.sprite.Sprite):
                 return 3
         return 0
 
-    def move(self, keys, walls, exit_maze, enemies) -> int:
+    def move(self, keys, walls: pygame.sprite.Group, exit_maze: pygame.sprite.Group,
+             enemies: pygame.sprite.Group) -> int:
         dx, dy = 0, 0
         if keys[pygame.K_UP]:  # Движение вверх
             dy = -self.speed

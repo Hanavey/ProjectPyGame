@@ -4,7 +4,7 @@ from queue import PriorityQueue
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, x, y, maze, tile_size, R, *groups):
+    def __init__(self, x: int, y: int, maze: list, tile_size: int, R: int, *groups: pygame.sprite.Group):
         super().__init__(*groups)  # Инициализация родительского класса Sprite
         self.x = x
         self.y = y
@@ -30,13 +30,13 @@ class Enemy(pygame.sprite.Sprite):
             self.move()
             self.last_move_time = current_time
 
-    def move(self):
+    def move(self): # Метод передвижения
         if self.path:
             next_cell = self.path.pop(0)
             self.x, self.y = next_cell
             self.rect.topleft = (self.x * self.tile_size, self.y * self.tile_size)
 
-    def in_field_of_view(self, player_pos):
+    def in_field_of_view(self, player_pos: tuple[float, float]) -> bool:
         player_px, player_py = player_pos
         enemy_px = self.rect.centerx
         enemy_py = self.rect.centery
@@ -74,7 +74,7 @@ class Enemy(pygame.sprite.Sprite):
 
         return []
 
-    def get_neighbors(self, cell):
+    def get_neighbors(self, cell: int):
         x, y = cell
         neighbors = []
         for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:

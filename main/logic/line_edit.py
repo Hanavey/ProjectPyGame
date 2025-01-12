@@ -1,7 +1,9 @@
 import pygame
 
 class LineEdit:
-    def __init__(self, x, y, width, height, font, text_color=(0, 0, 0), bg_color=(255, 255, 255), border_color=(0, 0, 0), border_width=2):
+    """Класс пользовательского ввода"""
+    def __init__(self, x: int, y: int, width: int, height: int, font, text_color=(0, 0, 0), bg_color=(255, 255, 255),
+                 border_color=(0, 0, 0), border_width=2):
         self.rect = pygame.Rect(x, y, width, height)
         self.font = font
         self.text_color = text_color
@@ -17,7 +19,7 @@ class LineEdit:
         self.initial_hold_time = 500  # Время ожидания (мс) перед началом ускоренного удаления
         self.repeat_interval = 50  # Интервал между удалениями при ускорении (мс)
 
-    def handle_event(self, event):  # Добавление текста в переменную text
+    def handle_event(self, event: pygame.event):  # Добавление текста в переменную text
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(event.pos):
                 self.active = not self.active
@@ -53,7 +55,7 @@ class LineEdit:
                 if (self.backspace_timer - self.initial_hold_time) % self.repeat_interval < dt:
                     self.text = self.text[:-1]
 
-    def draw(self, screen): # Метод вывода на экран
+    def draw(self, screen: pygame.Surface): # Метод вывода на экран
         pygame.draw.rect(screen, self.bg_color, self.rect)
         pygame.draw.rect(screen, self.border_color, self.rect, self.border_width)
         text_surface = self.font.render(self.text, True, self.text_color)
@@ -64,5 +66,5 @@ class LineEdit:
             cursor_height = self.rect.height - 10
             pygame.draw.line(screen, self.text_color, (cursor_x, cursor_y), (cursor_x, cursor_y + cursor_height), 2)
 
-    def return_text(self):
+    def return_text(self) -> str:
         return self.text

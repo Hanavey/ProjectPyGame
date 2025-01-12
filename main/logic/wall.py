@@ -6,7 +6,7 @@ from main.logic.load_images import load_image
 
 class Wall(pygame.sprite.Sprite):
     """Класс стен"""
-    def __init__(self, pos: tuple[int, int], cell_size: int, wall_stage: int, *groups):
+    def __init__(self, pos: tuple[int, int], cell_size: int, wall_stage: int, *groups: pygame.sprite.Group):
         super().__init__(*groups)
         # Словарь с изображениями
         stages = {

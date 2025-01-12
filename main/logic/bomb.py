@@ -1,9 +1,12 @@
+# Импорт библиотек
 import pygame
+# Импорт созданных функций
 from main.logic.load_images import load_image
 
 
 class Bomb(pygame.sprite.Sprite):
-    def __init__(self, x, y, cell_size, *groups):
+    """Класс бомб"""
+    def __init__(self, x: int, y: int, cell_size: int, *groups: pygame.sprite.Group):
         super().__init__(*groups)
         self.x = x
         self.y = y
@@ -16,7 +19,8 @@ class Bomb(pygame.sprite.Sprite):
         self.timer = pygame.time.get_ticks()
         self.explode_time = 200
 
-    def explosion(self, maze, enemy_group, wall_group):
+    def explosion(self, maze: list, enemy_group: pygame.sprite.Group, wall_group: pygame.sprite.Group) -> (
+            tuple)[list, pygame.sprite.Group, list]: # Метод взрыва
         current_time = pygame.time.get_ticks()
         updated_cells = []  # Список измененных клеток
 
@@ -42,7 +46,7 @@ class Bomb(pygame.sprite.Sprite):
 
         return maze, enemy_group, updated_cells
 
-    def get_explosion_area(self):
+    def get_explosion_area(self) -> pygame.Rect:   # Прямоугольник для расчета радиуса взрыва
         return pygame.Rect(
             (self.x - 1) * self.cell_size,
             (self.y - 1) * self.cell_size,

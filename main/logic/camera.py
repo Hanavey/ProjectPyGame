@@ -1,6 +1,6 @@
 class Camera:
     """Класс камеры"""
-    def __init__(self, world_width, world_height, screen_width, screen_height):
+    def __init__(self, world_width: int, world_height: int, screen_width: int, screen_height: int):
         self.world_width = world_width  # Ширина игрового мира
         self.world_height = world_height    # Длина игрового мира
         self.screen_width = screen_width    # Ширина экрана
