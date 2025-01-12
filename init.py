@@ -23,11 +23,14 @@ from main.logic.line_edit import LineEdit
 from main.logic.bomb import Bomb
 
 
+# Запуск экрана
+pygame.init()
 screen = pygame.display.set_mode((1920, 1080))
+# Константа
 CELL_SIZE = 60
 
 
-def option() -> None:
+def option() -> None:   # Экран опций
     screen.fill((255, 255, 255))
     Text(font_size=100, color=(0, 0, 0)).render(screen, 'Пока идет разработка(((', (960, 100), True)
     btn_return = Button(screen, (720, 300), (480, 50), text='Назад', text_color=(0, 0, 0))
@@ -46,7 +49,7 @@ def option() -> None:
         pygame.display.flip()
 
 
-def get_wall_stage(layout, x, y):
+def get_wall_stage(layout, x, y):   # Функция обработки стен (Состояние стены)
     neighbors = {
         "top": layout[y - 1][x] if y > 0 else 0,  # Сверху
         "bottom": layout[y + 1][x] if y < len(layout) - 1 else 0,  # Снизу
@@ -99,11 +102,10 @@ def get_wall_stage(layout, x, y):
     if neighbors["bottom"] and not any(v for k, v in neighbors.items() if k != "bottom"):
         return 52  # Смотрит вниз
 
-    # На случай ошибки: по умолчанию вертикальная стена
     return 1
 
 
-def get_exit_stage(layout, x, y):
+def get_exit_stage(layout, x, y):   # Состояние выхода (направление)
     neighbors = {
         "top": layout[y - 1][x] if y > 0 else 0,  # Сверху
         "bottom": layout[y + 1][x] if y < len(layout) - 1 else 0,  # Снизу
@@ -117,13 +119,52 @@ def get_exit_stage(layout, x, y):
         return 2
 
 
-def draw_bomb_counter(font, bomb_count):
-    text = font.render(f'Bombs: {bomb_count}', True, (255, 255, 255))
-    screen.blit(text, (10, 10))
+def lost_screen():  # Экран проигрыша
+    screen.fill((0, 0, 0))
+    lost_image = pygame.transform.scale(load_image('lost_screen.png'), (1920, 1080))
+    new_game_btn = Button(screen, (150, 660), (630, 180), image='new_game.jpg', surface=lost_image)
+    exit_btn = Button(screen, (1135, 660), (630, 180), image='exit.jpg', surface=lost_image)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    new_game_btn.connect(play, event.pos)
+                    exit_btn.connect(main_menu, event.pos)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    main_menu()
+        new_game_btn.render()
+        exit_btn.render()
+        screen.blit(lost_image, (0, 0))
 
 
-def play() -> None:
-    def create_walls(layout, updated_cells1=None):
+def win_screen():   # Экран выигрыша
+    screen.fill((0, 0, 0))
+    lost_image = pygame.transform.scale(load_image('win_screen.png'), (1920, 1080))
+    new_game_btn = Button(screen, (150, 660), (630, 180), image='new_game.jpg', surface=lost_image)
+    exit_btn = Button(screen, (1135, 660), (630, 180), image='exit.jpg', surface=lost_image)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    new_game_btn.connect(play, event.pos)
+                    exit_btn.connect(main_menu, event.pos)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    main_menu()
+        new_game_btn.render()
+        exit_btn.render()
+        screen.blit(lost_image, (0, 0))
+
+
+def play() -> None: # Основная функция игры
+    def create_walls(layout, updated_cells1=None):  # Функция для создания стен
         walls1 = pygame.sprite.Group()
         if updated_cells1:
             for cell1 in updated_cells1:
@@ -136,36 +177,38 @@ def play() -> None:
                     wall_stage = get_wall_stage(layout, x1, y1)
                     Wall((x1, y1), CELL_SIZE, wall_stage, walls, all_sprites_group)
             return walls1
-        grass = pygame.sprite.Group()
-        exit_maze1 = pygame.sprite.Group()
+        grass = pygame.sprite.Group()   # Группа травы
+        exit_maze1 = pygame.sprite.Group()  # Группа для выхода
         for y1, row1 in enumerate(layout):
             for x1, cell1 in enumerate(row1):
                 Grass((x1, y1), CELL_SIZE, grass, all_sprites_group)
                 if cell1 == 1:  # Если клетка - стена
                     wall_stage = get_wall_stage(layout, x1, y1)
                     Wall((x1, y1), CELL_SIZE, wall_stage, walls1, all_sprites_group)
-                if cell1 == 3:
+                if cell1 == 3:  # Если клетка - выход
                     exit_stage = get_exit_stage(layout, x1, y1)
                     ExitMaze((x1, y1), CELL_SIZE, exit_stage, exit_maze1, all_sprites_group)
         return walls1, grass, exit_maze1
 
-    all_sprites_group = pygame.sprite.Group()
     board = Board(60, 60)  # 60x60 клеток
     board.set_view(0, 0, CELL_SIZE)
     empty_cells = []
     for y, row in enumerate(board.board):
         for x, cell in enumerate(row):
             if cell == 0:
-                empty_cells.append((x, y))
+                if not 25 < x < 35 and not 25 < y < 35:
+                    empty_cells.append((x, y))
     screen.fill((0, 0, 0))
     clock1 = pygame.time.Clock()
     walls_data = create_walls(board.board)
+    # Группы спрайтов
+    all_sprites_group = pygame.sprite.Group()
     walls = walls_data[0]
     exit_maze = walls_data[2]
     enemies = pygame.sprite.Group()
     camera = Camera(board.width * CELL_SIZE, board.height * CELL_SIZE, 1920, 1080)
 
-    for _ in range(10):
+    for _ in range(20): # Создание врагов
         x, y = choice(empty_cells)
         Enemy(x, y, board.board, 60, 7, all_sprites_group, enemies)
         empty_cells.remove((x, y))
@@ -180,8 +223,10 @@ def play() -> None:
     menu_screen = pygame.transform.scale(load_image('menu.png'), (50, 50))
     menu_btn = Button(screen, (10, 10), (50, 50), image='empty.png', surface=menu_screen)
 
-    bombs = 7
+    # Кол-во заданных бомб
+    bombs = 5
 
+    # Основной цикл
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -196,13 +241,17 @@ def play() -> None:
                         Bomb(player.rect.center[0] // CELL_SIZE, player.rect.center[1] // CELL_SIZE, CELL_SIZE,
                                     all_sprites_group)
                         bombs -= 1
+                if event.key == pygame.K_ESCAPE:
+                    main_menu()
 
         keys = pygame.key.get_pressed()
         check = player.move(keys, walls, exit_maze, enemies)
+        # Условие выигрыша
         if check == 1:
-            break
+            win_screen()
+        # Условие проигрыша
         if check == 2:
-            break
+            lost_screen()
 
         enemies.update(player.rect.center)
 
@@ -220,18 +269,15 @@ def play() -> None:
             screen.blit(sprite.image, camera.apply(sprite))
         menu_btn.render()
         Text(font_size=50, color=(255, 0, 0)).render(screen, f'Bombs: {bombs}', (60, 10))
-
         pygame.display.flip()
         clock1.tick(75)
 
-    return
 
-
-def quit_screen(screen_start) -> None:
+def quit_screen(screen_start) -> None:  # Экран выхода из игры
     scr = fade_in_out(screen, screen_start, fade_in=False, max_alpha=122, speed=3)
     screen.blit(scr, (0, 0))
-    no_btn = Button(screen, (460, 540), (400, 50), text='NO', image='Drawing (1).png', surface=screen)
-    yes_btn = Button(screen, (1000, 540), (400, 50), text='YES', image='Drawing (1).png', surface=screen)
+    no_btn = Button(screen, (526, 540), (384, 100), image='no.jpg', surface=screen)
+    yes_btn = Button(screen, (1010, 540), (384, 100), image='yes.jpg', surface=screen)
     Text(color=(255, 0, 0), font_size=100).render(screen, 'Выйти из игры?', (500, 360))
     no_btn.render()
     yes_btn.render()
@@ -250,15 +296,15 @@ def quit_screen(screen_start) -> None:
                     return
 
 
-def main_menu():
+def main_menu():    # Функция главного меню
     pygame.display.set_caption('Разрушитель лабиринтов')
     clock1 = pygame.time.Clock()
     screen.fill((0, 0, 0))
     screen_start = load_image('home_screen.png')
     screen.blit(screen_start, (0, 0))
-    button_start = Button(screen, (720, 425), (480, 50), image='Drawing (1).png', surface=screen_start)
-    button_help = Button(screen, (720, 550), (480, 50), image='Drawing (1).png', surface=screen_start)
-    button_exit = Button(screen, (720, 825), (480, 50), image='Drawing (1).png', surface=screen_start)
+    button_start = Button(screen, (720, 530), (480, 120), image='new_game.jpg', surface=screen_start)
+    button_help = Button(screen, (720, 730), (480, 100), image='options.jpg', surface=screen_start)
+    button_exit = Button(screen, (720, 930), (480, 100), image='exit.jpg', surface=screen_start)
     running = True
     while running:
         for event in pygame.event.get():
@@ -275,18 +321,18 @@ def main_menu():
     pygame.quit()
 
 
-def hash_password(password: str) -> str:
+def hash_password(password: str) -> str:    # Хэширование паролей
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')
 
 
-def verify_password(stored_password: str, provided_password: str) -> bool:
+def verify_password(stored_password: str, provided_password: str) -> bool:  # Проверка валидности пароля
     return bcrypt.checkpw(provided_password.encode('utf-8'), stored_password.encode('utf-8'))
 
 
-def registration():
-    def enter(login: str, password: str, sign_in: bool):
+def registration(): # Окно входа или регистрации
+    def enter(login: str, password: str, sign_in: bool):    # Функция для работы с базой данных
         enter_to_play = False
         comments = pygame.Surface((1920, 1080))
         try:
@@ -319,7 +365,6 @@ def registration():
                 print(1)
                 main_menu()
             enter_screen.blit(comments, (0, 0))
-    pygame.init()
     pygame.display.set_caption('Регистрация')
     clock1 = pygame.time.Clock()
     font = pygame.font.Font(None, 40)
@@ -329,9 +374,9 @@ def registration():
 
     password_edit = LineEdit(760, 400, 400, 50, font)
 
-    signin_btn = Button(enter_screen, (535, 125), (400, 50), image='Drawing (1).png', surface=enter_screen)
-    new_akk_btn = Button(enter_screen, (985, 125), (400, 50), image='Drawing (1).png', surface=enter_screen)
-    enter_btn = Button(enter_screen, (760, 600), (400, 50), image='Drawing (1).png', surface=enter_screen)
+    signin_btn = Button(enter_screen, (535, 100), (400, 100), image='sign_in.png', surface=enter_screen)
+    new_akk_btn = Button(enter_screen, (985, 100), (400, 100), image='registration.jpg', surface=enter_screen)
+    enter_btn = Button(enter_screen, (760, 600), (400, 100), image='enter.png', surface=enter_screen)
 
     check_mark = pygame.transform.scale(load_image('check_mark.png'), (50, 50))
 
