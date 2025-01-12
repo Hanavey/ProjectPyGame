@@ -20,6 +20,7 @@ from main.logic.exit_maze import ExitMaze
 from main.logic.camera import Camera
 from main.logic.enemy import Enemy
 from main.logic.line_edit import LineEdit
+from main.logic.bomb import Bomb
 
 
 screen = pygame.display.set_mode((1920, 1080))
@@ -116,9 +117,25 @@ def get_exit_stage(layout, x, y):
         return 2
 
 
+def draw_bomb_counter(font, bomb_count):
+    text = font.render(f'Bombs: {bomb_count}', True, (255, 255, 255))
+    screen.blit(text, (10, 10))
+
+
 def play() -> None:
-    def create_walls(layout):
+    def create_walls(layout, updated_cells1=None):
         walls1 = pygame.sprite.Group()
+        if updated_cells1:
+            for cell1 in updated_cells1:
+                x1, y1 = cell1
+                if layout[y1][x1] == 0:  # Если ячейка пустая
+                    for wall in walls:  # Удаляем соответствующий спрайт
+                        if wall.rect.topleft == (x1 * CELL_SIZE, y1 * CELL_SIZE):
+                            wall.kill()
+                else:  # Перерисовываем стену, если она есть
+                    wall_stage = get_wall_stage(layout, x1, y1)
+                    Wall((x1, y1), CELL_SIZE, wall_stage, walls, all_sprites_group)
+            return walls1
         grass = pygame.sprite.Group()
         exit_maze1 = pygame.sprite.Group()
         for y1, row1 in enumerate(layout):
@@ -131,6 +148,7 @@ def play() -> None:
                     exit_stage = get_exit_stage(layout, x1, y1)
                     ExitMaze((x1, y1), CELL_SIZE, exit_stage, exit_maze1, all_sprites_group)
         return walls1, grass, exit_maze1
+
     all_sprites_group = pygame.sprite.Group()
     board = Board(60, 60)  # 60x60 клеток
     board.set_view(0, 0, CELL_SIZE)
@@ -161,6 +179,9 @@ def play() -> None:
 
     menu_screen = pygame.transform.scale(load_image('menu.png'), (50, 50))
     menu_btn = Button(screen, (10, 10), (50, 50), image='empty.png', surface=menu_screen)
+    bombs_screen = pygame.Surface((70, 50))
+
+    bombs = 7
 
     while True:
         for event in pygame.event.get():
@@ -170,12 +191,21 @@ def play() -> None:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 menu_btn.connect(main_menu, event.pos)
 
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    if bombs > 0:
+                        Bomb(player.rect.center[0] // CELL_SIZE, player.rect.center[1] // CELL_SIZE, CELL_SIZE,
+                                    all_sprites_group)
+                        bombs -= 1
+
         keys = pygame.key.get_pressed()
         check = player.move(keys, walls, exit_maze, enemies)
         if check == 1:
             break
         if check == 2:
             break
+
+        enemies.update(player.rect.center)
 
         # Обновление экрана
         camera.update(player)
@@ -184,8 +214,13 @@ def play() -> None:
         screen.fill((0, 0, 0))  # Заливка фона
 
         for sprite in all_sprites_group:
+            if isinstance(sprite, Bomb):
+                board.board, enemies, updated_cells = sprite.explosion(board.board, enemies, walls)
+                if updated_cells:
+                    create_walls(board.board, updated_cells)
             screen.blit(sprite.image, camera.apply(sprite))
         menu_btn.render()
+        Text(font_size=50, color=(255, 0, 0)).render(screen, f'Bombs: {bombs}', (60, 10))
 
         pygame.display.flip()
         clock1.tick(75)
