@@ -179,7 +179,6 @@ def play() -> None:
 
     menu_screen = pygame.transform.scale(load_image('menu.png'), (50, 50))
     menu_btn = Button(screen, (10, 10), (50, 50), image='empty.png', surface=menu_screen)
-    bombs_screen = pygame.Surface((70, 50))
 
     bombs = 7
 
@@ -315,7 +314,6 @@ def registration():
                 Text(font_size=50).render(comments, 'Вы не ввели логин(', (500, 700))
         except Exception as e:
             print(e)
-            Text(font_size=50).render(comments, str(e), (500, 700))
         finally:
             if enter_to_play:
                 print(1)
