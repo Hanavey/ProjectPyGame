@@ -8,9 +8,13 @@ class Player(pygame.sprite.Sprite):
     """Класс игрока"""
     def __init__(self, pos: tuple[int, int], cell_size: int, img: int, *groups: pygame.sprite.Group):
         super().__init__(*groups)
-        # Создание изображения
-        self.image = load_image(f'player{img}.png')
-        self.image = pygame.transform.scale(self.image, (cell_size // 1.5, cell_size))
+        # Загрузка изображений для анимации
+        self.images = [
+            pygame.transform.scale(load_image(f'player{img}.png'), (cell_size // 1.5, cell_size)),
+            pygame.transform.scale(load_image(f'player{img}_1.png'), (cell_size // 1.5, cell_size)),
+            pygame.transform.scale(load_image(f'player{img}_2.png'), (cell_size // 1.5, cell_size)),
+        ]
+        self.image = self.images[0]  # Устанавливаем начальное изображение
         # Создание rect объекта
         self.rect = self.image.get_rect()
         self.rect.center = (pos[0], pos[1])
@@ -19,6 +23,17 @@ class Player(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         # Переменные для разворота игрока
         self.left, self.right = False, True
+        # Счётчик для анимации
+        self.animation_index = 0
+        self.animation_timer = 0
+        self.animation_speed = 10  # Скорость анимации
+
+    def update_animation(self):
+        self.animation_timer += 1
+        if self.animation_timer >= self.animation_speed:
+            self.animation_timer = 0
+            self.animation_index = (self.animation_index + 1) % len(self.images)
+            self.image = self.images[self.animation_index]
 
     def check_collision(self, walls: pygame.sprite.Group, exit_maze: pygame.sprite.Group,
                         enemies: pygame.sprite.Group) -> int:
@@ -36,33 +51,43 @@ class Player(pygame.sprite.Sprite):
     def move(self, keys, walls: pygame.sprite.Group, exit_maze: pygame.sprite.Group,
              enemies: pygame.sprite.Group) -> int:
         dx, dy = 0, 0
+        is_moving = False  # Флаг для проверки движения
         if keys[pygame.K_UP]:  # Движение вверх
             dy = -self.speed
+            is_moving = True
         if keys[pygame.K_DOWN]:  # Движение вниз
             dy = self.speed
+            is_moving = True
         if keys[pygame.K_LEFT]:  # Движение влево
             dx = -self.speed
+            is_moving = True
             if self.left:
-                self.image = pygame.transform.flip(self.image, True, False)
+                self.images = [pygame.transform.flip(image, True, False) for image in self.images]
                 self.right = True
                 self.left = False
         if keys[pygame.K_RIGHT]:  # Движение вправо
             dx = self.speed
+            is_moving = True
             if self.right:
-                self.image = pygame.transform.flip(self.image, True, False)
+                self.images = [pygame.transform.flip(image, True, False) for image in self.images]
                 self.left = True
                 self.right = False
 
         self.rect.x += dx
-        if self.check_collision(walls, exit_maze, enemies) == 1: # Если сталкивается со стенами дальше не идет по оси X
+        if self.check_collision(walls, exit_maze, enemies) == 1:  # Если сталкивается со стенами дальше не идет по оси X
             self.rect.x -= dx
 
         self.rect.y += dy
-        if self.check_collision(walls, exit_maze, enemies) == 1: # Если сталкивается со стенами дальше не идет по оси X
+        if self.check_collision(walls, exit_maze, enemies) == 1:  # Если сталкивается со стенами дальше не идет по оси Y
             self.rect.y -= dy
 
-        if self.check_collision(walls, exit_maze, enemies) == 2: # Если сталкивается с выходом, возвращается True
+        if is_moving:
+            self.update_animation()  # Обновляем анимацию, если игрок движется
+        else:
+            self.image = self.images[0]  # Возвращаемся к первому кадру, если игрок остановился
+
+        if self.check_collision(walls, exit_maze, enemies) == 2:  # Если сталкивается с выходом
             return 1
 
-        if self.check_collision(walls, exit_maze, enemies) == 3:
+        if self.check_collision(walls, exit_maze, enemies) == 3:  # Если сталкивается с врагами
             return 2
