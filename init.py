@@ -25,27 +25,50 @@ from main.logic.bomb import Bomb
 
 # Запуск экрана
 pygame.init()
+pygame.mixer.init()
 screen = pygame.display.set_mode((1920, 1080))
 # Константа
 CELL_SIZE = 60
 
+player_ = 1
+
 
 def option() -> None:   # Экран опций
-    screen.fill((255, 255, 255))
-    Text(font_size=100, color=(0, 0, 0)).render(screen, 'Пока идет разработка(((', (960, 100), True)
-    btn_return = Button(screen, (720, 300), (480, 50), text='Назад', text_color=(0, 0, 0))
-    btn_return.render()
+    global player_
+    pygame.mixer.music.load("main/musics/music.mp3")
+    pygame.mixer.music.play(-1)
+    screen.fill((0, 0, 0))
+    buttons = pygame.Surface(screen.get_size())
+    player1_btn = Button(screen, (510, 100), (400, 100), image='player1_.png', surface=buttons)
+    player2_btn = Button(screen, (1010, 100), (400, 100), image='player2_.png', surface=buttons)
+    menu_btn = Button(screen, (10, 10), (50, 50), image='menu.png', surface=buttons)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1 and btn_return.get_click(event.pos):
-                    return
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    return
+                    main_menu()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                menu_btn.connect(main_menu, event.pos)
+                if player1_btn.get_click(event.pos):
+                    player_ = 1
+                if player2_btn.get_click(event.pos):
+                    player_ = 2
+
+        screen.fill((0, 0, 0))
+
+        buttons.blit(pygame.Surface((300, 300)), (858, 384))
+        buttons.blit(load_image('player1.png'), (858, 384))
+        if player_ == 2:
+            buttons.blit(pygame.Surface((300, 300)), (858, 384))
+            buttons.blit(load_image('player2.png'), (858, 384))
+
+        player1_btn.render()
+        player2_btn.render()
+        menu_btn.render()
+
         pygame.display.flip()
 
 
@@ -120,6 +143,8 @@ def get_exit_stage(layout, x, y):   # Состояние выхода (напр�
 
 
 def lost_screen():  # Экран проигрыша
+    pygame.mixer.music.load("main/musics/fail.mp3")
+    pygame.mixer.music.play(0)
     screen.fill((0, 0, 0))
     lost_image = pygame.transform.scale(load_image('lost_screen.png'), (1920, 1080))
     new_game_btn = Button(screen, (150, 660), (630, 180), image='new_game.jpg', surface=lost_image)
@@ -142,6 +167,8 @@ def lost_screen():  # Экран проигрыша
 
 
 def win_screen():   # Экран выигрыша
+    pygame.mixer.music.load("main/musics/win.mp3")
+    pygame.mixer.music.play(0)
     screen.fill((0, 0, 0))
     lost_image = pygame.transform.scale(load_image('win_screen.png'), (1920, 1080))
     new_game_btn = Button(screen, (150, 660), (630, 180), image='new_game.jpg', surface=lost_image)
@@ -164,6 +191,11 @@ def win_screen():   # Экран выигрыша
 
 
 def play() -> None: # Основная функция игры
+    pygame.mixer.music.stop()
+    all_sprites_group = pygame.sprite.Group()
+    screen.fill((0, 0, 0))
+    Text(font_size=100).render(screen, 'Loading...', (0, 0))
+    pygame.display.flip()
     def create_walls(layout, updated_cells1=None):  # Функция для создания стен
         walls1 = pygame.sprite.Group()
         if updated_cells1:
@@ -198,11 +230,9 @@ def play() -> None: # Основная функция игры
             if cell == 0:
                 if not 25 < x < 35 and not 25 < y < 35:
                     empty_cells.append((x, y))
-    screen.fill((0, 0, 0))
     clock1 = pygame.time.Clock()
     walls_data = create_walls(board.board)
     # Группы спрайтов
-    all_sprites_group = pygame.sprite.Group()
     walls = walls_data[0]
     exit_maze = walls_data[2]
     enemies = pygame.sprite.Group()
@@ -218,13 +248,16 @@ def play() -> None: # Основная функция игры
     world_center_y = (board.height * CELL_SIZE) // 2
 
     # Создаём игрока в центре мира
-    player = Player((world_center_x, world_center_y), CELL_SIZE, all_sprites_group)
+    player = Player((world_center_x, world_center_y), CELL_SIZE, player_, all_sprites_group)
 
     menu_screen = pygame.transform.scale(load_image('menu.png'), (50, 50))
     menu_btn = Button(screen, (10, 10), (50, 50), image='empty.png', surface=menu_screen)
 
     # Кол-во заданных бомб
     bombs = 5
+
+    pygame.mixer.music.load("main/musics/music.mp3")
+    pygame.mixer.music.play(-1)
 
     # Основной цикл
     while True:
@@ -297,6 +330,8 @@ def quit_screen(screen_start) -> None:  # Экран выхода из игры
 
 
 def main_menu():    # Функция главного меню
+    pygame.mixer.music.load("main/musics/music.mp3")
+    pygame.mixer.music.play(-1)
     pygame.display.set_caption('Разрушитель лабиринтов')
     clock1 = pygame.time.Clock()
     screen.fill((0, 0, 0))
