@@ -397,7 +397,6 @@ def registration(): # Окно входа или регистрации
             print(e)
         finally:
             if enter_to_play:
-                print(1)
                 main_menu()
             enter_screen.blit(comments, (0, 0))
     pygame.display.set_caption('Регистрация')
