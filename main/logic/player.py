@@ -6,10 +6,10 @@ from main.logic.load_images import load_image
 
 class Player(pygame.sprite.Sprite):
     """Класс игрока"""
-    def __init__(self, pos: tuple[int, int], cell_size: int, *groups: pygame.sprite.Group):
+    def __init__(self, pos: tuple[int, int], cell_size: int, img: int, *groups: pygame.sprite.Group):
         super().__init__(*groups)
         # Создание изображения
-        self.image = load_image('player1.png')
+        self.image = load_image(f'player{img}.png')
         self.image = pygame.transform.scale(self.image, (cell_size // 1.5, cell_size))
         # Создание rect объекта
         self.rect = self.image.get_rect()
