@@ -5,7 +5,7 @@ import os
 
 def load_image(name, color_key=None):   # Функция для загрузки изображения
     """Загрузка изображения"""
-    fullname = os.path.join('main', 'images', name)
+    fullname = os.path.abspath(os.path.join('main', 'images', name))
     try:
         image = pygame.image.load(fullname)
     except pygame.error as message:
